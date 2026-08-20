@@ -130,6 +130,7 @@ jobs:
           cp -r linux-x86/espeak-ng-data nuget/runtimes/linux-x86/native/
 
           cp repo/COPYING nuget/LICENSE.txt
+          cp repo/espeak-ng.nuspec nuget/espeak-ng.nuspec
 
           zip -r espeak-ng.nupkg nuget/
 
