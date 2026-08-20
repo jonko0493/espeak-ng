@@ -20,25 +20,30 @@ jobs:
 
           - arch: amd64
             ccarch: x86_64
+            nugetarch: x64
             archcflags: ""
             cross: no
           - arch: i386
             ccarch: x86_64
+            nugetarch: x86
             archcflags: "-m32 -msse2 -mfpmath=sse"
             cross: no
           - arch: aarch64
             ccarch: aarch64
+            nugetarch: arm64
             archcflags: "-Wl,--dynamic-linker=/usr/aarch64-linux-gnu/lib/ld-linux-aarch64.so.1"
             runenv: 'LD_LIBRARY_PATH=/usr/aarch64-linux-gnu/lib:$LD_LIBRARY_PATH'
             cross: yes
           - arch: arm
             ccarch: arm
+            nugetarch: arm
             sys: linux-gnueabi
             archcflags: "-D_FILE_OFFSET_BITS=64 -latomic -Wl,--dynamic-linker=/usr/arm-linux-gnueabi/lib/ld-linux.so.3"
             runenv: 'LD_LIBRARY_PATH=/usr/arm-linux-gnueabi/lib:$LD_LIBRARY_PATH'
             cross: yes
           - arch: riscv64
             ccarch: riscv64
+            nugetarch: riscv64
             archcflags: "-Wl,--dynamic-linker=/usr/riscv64-linux-gnu/lib/ld-linux-riscv64-lp64d.so.1"
             runenv: 'LD_LIBRARY_PATH=/usr/riscv64-linux-gnu/lib:$LD_LIBRARY_PATH'
             cross: yes
@@ -56,7 +61,7 @@ jobs:
       if: matrix.os == 'ubuntu' && matrix.cross == 'no'
       run: "sudo apt-get install cmake valgrind g++-12-multilib linux-libc-dev:${{ matrix.arch }} libpcaudio-dev:${{ matrix.arch }} libsonic-dev:${{ matrix.arch }} libc6-dbg:${{ matrix.arch }} libgcc-s1:${{ matrix.arch }}"
     - name: apt-cross-deps
-      if: matrix.cross == 'yes'
+      if: matrix.os == 'ubuntu' && matrix.cross == 'yes'
       run: sudo apt-get install qemu-user g++-12-${{ matrix.arch }}-${{ matrix.sys }}
 
     # Checkout code
@@ -70,14 +75,7 @@ jobs:
         [ 'x${{ matrix.cross }}' = 'xyes' ] && export LD="${{ matrix.ccarch }}-${{ matrix.sys }}-ld"
         export CFLAGS="-g -Og -fno-omit-frame-pointer ${{ matrix.archcflags }}"
         export CXXFLAGS="-g -Og -fno-omit-frame-pointer ${{ matrix.archcflags }}"
-        cmake -Bbuild -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} -DUSE_ASYNC:BOOL=OFF
-
-    - name: config-failed-upload
-      if: ${{ failure() }}
-      uses: actions/upload-artifact@v7
-      with:
-        name: cmake-${{ matrix.os }}-${{ matrix.arch }}-gcc-release-builddir
-        path: build
+        cmake -Bbuild -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} -DUSE_ASYNC:BOOL=OFF
 
     # Build and test
     - name: make-binary
@@ -88,3 +86,54 @@ jobs:
       run: |
         ${{ matrix.runenv }} cmake --build build --target tests
         ${{ matrix.runenv }} ctest --test-dir build -T test -j8 --output-on-failure
+
+    - name: upload-artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: linux-${{ matrix.nugetarch }}
+        path: build
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: checkout-repo
+        uses: actions/checkout@v7
+        with:
+          path: repo
+
+      - name: download-artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: linux-*
+      
+      - name: create-nupkg
+        run: |
+          mkdir -p nuget/lib/net10.0
+          mkdir -p nuget/runtimes/linux-arm/native
+          mkdir -p nuget/runtimes/linux-arm64/native
+          mkdir -p nuget/runtimes/linux-riscv64/native
+          mkdir -p nuget/runtimes/linux-x64/native
+          mkdir -p nuget/runtimes/linux-x86/native
+
+          cp linux-arm/build/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-arm/native/
+          cp linux-arm64/build/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-arm64/native/
+          cp linux-riscv64/build/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-riscv64/native/
+          cp linux-x64/build/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-x64/native/
+          cp linux-x86/build/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-x86/native/
+
+          cp -r linux-arm/build/espeak-ng-data nuget/runtimes/linux-arm/native/
+          cp -r linux-arm64/build/espeak-ng-data nuget/runtimes/linux-arm64/native/
+          cp -r linux-riscv64/build/espeak-ng-data nuget/runtimes/linux-riscv64/native/
+          cp -r linux-x64/build/espeak-ng-data nuget/runtimes/linux-x64/native/
+          cp -r linux-x86/build/espeak-ng-data nuget/runtimes/linux-x86/native/
+
+          cp repo/COPYING nuget/LICENSE.txt
+
+          zip -r espeak-ng.nuget nuget/
+
+      - name: upload-artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: nuget
+          path: espeak-ng.nuget
