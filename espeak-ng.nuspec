@@ -3,7 +3,7 @@
     <metadata>
         <!-- Required elements-->
         <id>espeak-ng</id>
-        <version>1.0.2</version>
+        <version>1.0.3</version>
         <description>A compact open source software text-to-speech synthesizer</description>
         <authors>espeak-ng</authors>
         <dependencies>

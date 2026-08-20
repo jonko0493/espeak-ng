@@ -119,16 +119,17 @@ jobs:
           mkdir -p nuget/runtimes/linux-x86/native
           mkdir -p nuget/data
 
-          cp linux-arm/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-arm/native/
-          cp linux-arm64/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-arm64/native/
-          cp linux-riscv64/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-riscv64/native/
-          cp linux-x64/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-x64/native/
-          cp linux-x86/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-x86/native/
+          cp -L linux-arm/src/libespeak-ng/libespeak-ng.so nuget/runtimes/linux-arm/native/libespeak-ng.so
+          cp -L linux-arm64/src/libespeak-ng/libespeak-ng.so nuget/runtimes/linux-arm64/native/libespeak-ng.so
+          cp -L linux-riscv64/src/libespeak-ng/libespeak-ng.so nuget/runtimes/linux-riscv64/native/libespeak-ng.so
+          cp -L linux-x64/src/libespeak-ng/libespeak-ng.so nuget/runtimes/linux-x64/native/libespeak-ng.so
+          cp -L linux-x86/src/libespeak-ng/libespeak-ng.so nuget/runtimes/linux-x86/native/libespeak-ng.so
 
           cp -r linux-x64/espeak-ng-data nuget/data/
 
           cp repo/COPYING nuget/LICENSE.txt
           cp repo/espeak-ng.nuspec nuget/espeak-ng.nuspec
+          cp repo/espeak-ng.targets nuget/build/espeak-ng.targets
 
           cd nuget && zip -r ../espeak-ng.nupkg *
 
