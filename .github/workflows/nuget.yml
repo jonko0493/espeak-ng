@@ -47,7 +47,7 @@ jobs:
 
     # Linux - dependencies
     - name: apt-build-deps
-      if: matrix.os == 'ubuntu'
+      if: matrix.os == 'ubuntu' && matrix.arch != 'amd64'
       run: |
         [ 'x${{ matrix.cross }}' == 'xno' ] && sudo dpkg --add-architecture ${{ matrix.arch }}
         sudo apt-get update
