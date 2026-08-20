@@ -1,0 +1,90 @@
+name: NuGet
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    name: "Linux ${{ matrix.arch }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, i386, aarch64, arm, riscv64]
+
+        include:
+          - os: ubuntu
+            osver: 22.04
+            sys: linux-gnu
+
+          - arch: amd64
+            ccarch: x86_64
+            archcflags: ""
+            cross: no
+          - arch: i386
+            ccarch: x86_64
+            archcflags: "-m32 -msse2 -mfpmath=sse"
+            cross: no
+          - arch: aarch64
+            ccarch: aarch64
+            archcflags: "-Wl,--dynamic-linker=/usr/aarch64-linux-gnu/lib/ld-linux-aarch64.so.1"
+            runenv: 'LD_LIBRARY_PATH=/usr/aarch64-linux-gnu/lib:$LD_LIBRARY_PATH'
+            cross: yes
+          - arch: arm
+            ccarch: arm
+            sys: linux-gnueabi
+            archcflags: "-D_FILE_OFFSET_BITS=64 -latomic -Wl,--dynamic-linker=/usr/arm-linux-gnueabi/lib/ld-linux.so.3"
+            runenv: 'LD_LIBRARY_PATH=/usr/arm-linux-gnueabi/lib:$LD_LIBRARY_PATH'
+            cross: yes
+          - arch: riscv64
+            ccarch: riscv64
+            archcflags: "-Wl,--dynamic-linker=/usr/riscv64-linux-gnu/lib/ld-linux-riscv64-lp64d.so.1"
+            runenv: 'LD_LIBRARY_PATH=/usr/riscv64-linux-gnu/lib:$LD_LIBRARY_PATH'
+            cross: yes
+
+    steps:
+
+    # Linux - dependencies
+    - name: apt-build-deps
+      if: matrix.os == 'ubuntu'
+      run: |
+        [ 'x${{ matrix.cross }}' == 'xno' ] && sudo dpkg --add-architecture ${{ matrix.arch }}
+        sudo apt-get update
+        sudo apt-get install ronn kramdown python3
+    - name: apt-arch-deps
+      if: matrix.os == 'ubuntu' && matrix.cross == 'no'
+      run: "sudo apt-get install cmake valgrind g++-12-multilib linux-libc-dev:${{ matrix.arch }} libpcaudio-dev:${{ matrix.arch }} libsonic-dev:${{ matrix.arch }} libc6-dbg:${{ matrix.arch }} libgcc-s1:${{ matrix.arch }}"
+    - name: apt-cross-deps
+      if: matrix.cross == 'yes'
+      run: sudo apt-get install qemu-user g++-12-${{ matrix.arch }}-${{ matrix.sys }}
+
+    # Checkout code
+    - uses: actions/checkout@v7
+
+    # Configure
+    - name: configure
+      run: |
+        export CC="${{ matrix.ccarch }}-${{ matrix.sys }}-gcc-12"
+        export CXX="${{ matrix.ccarch }}-${{ matrix.sys }}-g++-12"
+        [ 'x${{ matrix.cross }}' = 'xyes' ] && export LD="${{ matrix.ccarch }}-${{ matrix.sys }}-ld"
+        export CFLAGS="-g -Og -fno-omit-frame-pointer ${{ matrix.archcflags }}"
+        export CXXFLAGS="-g -Og -fno-omit-frame-pointer ${{ matrix.archcflags }}"
+        cmake -Bbuild -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} -DUSE_ASYNC:BOOL=OFF
+
+    - name: config-failed-upload
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v7
+      with:
+        name: cmake-${{ matrix.os }}-${{ matrix.arch }}-gcc-release-builddir
+        path: build
+
+    # Build and test
+    - name: make-binary
+      run: cmake --build build --target espeak-ng
+    - name: make-data
+      run: ${{ matrix.runenv }} cmake --build build --target data
+    - name: test
+      run: |
+        ${{ matrix.runenv }} cmake --build build --target tests
+        ${{ matrix.runenv }} ctest --test-dir build -T test -j8 --output-on-failure
