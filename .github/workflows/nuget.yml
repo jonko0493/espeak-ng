@@ -101,6 +101,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           path: repo
+          
 
       - name: download-artifacts
         uses: actions/download-artifact@v8
@@ -116,17 +117,17 @@ jobs:
           mkdir -p nuget/runtimes/linux-x64/native
           mkdir -p nuget/runtimes/linux-x86/native
 
-          cp linux-arm/build/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-arm/native/
-          cp linux-arm64/build/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-arm64/native/
-          cp linux-riscv64/build/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-riscv64/native/
-          cp linux-x64/build/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-x64/native/
-          cp linux-x86/build/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-x86/native/
+          cp linux-arm/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-arm/native/
+          cp linux-arm64/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-arm64/native/
+          cp linux-riscv64/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-riscv64/native/
+          cp linux-x64/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-x64/native/
+          cp linux-x86/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-x86/native/
 
-          cp -r linux-arm/build/espeak-ng-data nuget/runtimes/linux-arm/native/
-          cp -r linux-arm64/build/espeak-ng-data nuget/runtimes/linux-arm64/native/
-          cp -r linux-riscv64/build/espeak-ng-data nuget/runtimes/linux-riscv64/native/
-          cp -r linux-x64/build/espeak-ng-data nuget/runtimes/linux-x64/native/
-          cp -r linux-x86/build/espeak-ng-data nuget/runtimes/linux-x86/native/
+          cp -r linux-arm/espeak-ng-data nuget/runtimes/linux-arm/native/
+          cp -r linux-arm64/espeak-ng-data nuget/runtimes/linux-arm64/native/
+          cp -r linux-riscv64/espeak-ng-data nuget/runtimes/linux-riscv64/native/
+          cp -r linux-x64/espeak-ng-data nuget/runtimes/linux-x64/native/
+          cp -r linux-x86/espeak-ng-data nuget/runtimes/linux-x86/native/
 
           cp repo/COPYING nuget/LICENSE.txt
 
