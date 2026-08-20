@@ -131,10 +131,13 @@ jobs:
 
           cp repo/COPYING nuget/LICENSE.txt
 
-          zip -r espeak-ng.nuget nuget/
+          zip -r espeak-ng.nupkg nuget/
 
       - name: upload-artifact
         uses: actions/upload-artifact@v7
         with:
           name: nuget
-          path: espeak-ng.nuget
+          path: espeak-ng.nupkg
+
+      - name: nuget-push
+        run: dotnet nuget push -k ${{ secrets.NUGET_API_KEY }} -s https://nuget.intothedreamspring.com/v3/index.json ./espeak-ng.nupkg
