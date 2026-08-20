@@ -1,0 +1,10 @@
+<Project>
+    <ItemGroup
+        Condition="$(RuntimeIdentifier.StartsWith('linux')) Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Linux')))">
+        <None Include="$(MSBuildThisFileDirectory)../data/espeak-ng-data/**"
+            Link="espeak-ng-data/%(RecursiveDir)%(Filename)%(Extension)"
+            CopyToOutputDirectory="PreserveNewest"
+            CopyToPublishDirectory="PreserveNewest"
+            Visible="false" />
+    </ItemGroup>
+</Project>

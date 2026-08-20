@@ -110,13 +110,14 @@ jobs:
       
       - name: create-nupkg
         run: |
+          mkdir -p nuget/build
           mkdir -p nuget/lib/net10.0
           mkdir -p nuget/runtimes/linux-arm/native
           mkdir -p nuget/runtimes/linux-arm64/native
           mkdir -p nuget/runtimes/linux-riscv64/native
           mkdir -p nuget/runtimes/linux-x64/native
           mkdir -p nuget/runtimes/linux-x86/native
-          mkdir -p nuget/contentFiles/any/any/
+          mkdir -p nuget/data
 
           cp linux-arm/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-arm/native/
           cp linux-arm64/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-arm64/native/
@@ -124,7 +125,7 @@ jobs:
           cp linux-x64/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-x64/native/
           cp linux-x86/src/libespeak-ng/libespeak-ng.so* nuget/runtimes/linux-x86/native/
 
-          cp -r linux-x64/espeak-ng-data nuget/contentFiles/any/any/
+          cp -r linux-x64/espeak-ng-data nuget/data/
 
           cp repo/COPYING nuget/LICENSE.txt
           cp repo/espeak-ng.nuspec nuget/espeak-ng.nuspec

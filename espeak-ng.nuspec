@@ -3,16 +3,12 @@
     <metadata>
         <!-- Required elements-->
         <id>espeak-ng</id>
-        <version>1.0.1</version>
+        <version>1.0.2</version>
         <description>A compact open source software text-to-speech synthesizer</description>
         <authors>espeak-ng</authors>
         <dependencies>
             <group targetFramework="net10.0" />
         </dependencies>
-
-        <contentFiles>
-            <files include="any/any/espeak-ng-data/**" buildAction="None" copyToOutput="true" flatten="false" />
-        </contentFiles>
     </metadata>
     <!-- Optional 'files' node -->
 </package>
