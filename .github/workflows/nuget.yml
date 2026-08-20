@@ -132,7 +132,7 @@ jobs:
           cp repo/COPYING nuget/LICENSE.txt
           cp repo/espeak-ng.nuspec nuget/espeak-ng.nuspec
 
-          zip -r espeak-ng.nupkg nuget/
+          cd nuget && zip -r ../espeak-ng.nupkg *
 
       - name: upload-artifact
         uses: actions/upload-artifact@v7
