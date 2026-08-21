@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-espeak:
     runs-on: ubuntu-latest
 
     name: "Linux ${{ matrix.arch }}"
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, i386, aarch64, arm, riscv64]
+        arch: [amd64]
 
         include:
           - os: ubuntu
@@ -23,30 +23,6 @@ jobs:
             nugetarch: x64
             archcflags: ""
             cross: no
-          - arch: i386
-            ccarch: x86_64
-            nugetarch: x86
-            archcflags: "-m32 -msse2 -mfpmath=sse"
-            cross: no
-          - arch: aarch64
-            ccarch: aarch64
-            nugetarch: arm64
-            archcflags: "-Wl,--dynamic-linker=/usr/aarch64-linux-gnu/lib/ld-linux-aarch64.so.1"
-            runenv: 'LD_LIBRARY_PATH=/usr/aarch64-linux-gnu/lib:$LD_LIBRARY_PATH'
-            cross: yes
-          - arch: arm
-            ccarch: arm
-            nugetarch: arm
-            sys: linux-gnueabi
-            archcflags: "-D_FILE_OFFSET_BITS=64 -latomic -Wl,--dynamic-linker=/usr/arm-linux-gnueabi/lib/ld-linux.so.3"
-            runenv: 'LD_LIBRARY_PATH=/usr/arm-linux-gnueabi/lib:$LD_LIBRARY_PATH'
-            cross: yes
-          - arch: riscv64
-            ccarch: riscv64
-            nugetarch: riscv64
-            archcflags: "-Wl,--dynamic-linker=/usr/riscv64-linux-gnu/lib/ld-linux-riscv64-lp64d.so.1"
-            runenv: 'LD_LIBRARY_PATH=/usr/riscv64-linux-gnu/lib:$LD_LIBRARY_PATH'
-            cross: yes
 
     steps:
 
@@ -90,12 +66,33 @@ jobs:
     - name: upload-artifact
       uses: actions/upload-artifact@v7
       with:
-        name: linux-${{ matrix.nugetarch }}
+        name: espeak-ng
         path: build
+
+  build-pcaudio:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v7
+      with:
+        repository: jonko0493/pcaudiolib
+    
+    - name: build
+      run: |
+        ./autogen.sh
+        ./configure --prefix=$(pwd)
+        make
+        make install
+    - name: upload-artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: pcaudio
+        path: lib
 
   release:
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build-espeak, build-pcaudio]
     steps:
       - name: checkout-repo
         uses: actions/checkout@v7
@@ -103,29 +100,29 @@ jobs:
           path: repo
           
 
-      - name: download-artifacts
+      - name: download-espeak-ng
         uses: actions/download-artifact@v8
         with:
-          pattern: linux-*
+          name: espeak-ng
+          path: espeak-ng
+      
+      - name: download-pcaudio
+        uses: actions/download-artifact@v8
+        with:
+          name: pcaudio
+          path: pcaudio
       
       - name: create-nupkg
         run: |
           mkdir -p nuget/build
           mkdir -p nuget/lib/net10.0
-          mkdir -p nuget/runtimes/linux-arm/native
-          mkdir -p nuget/runtimes/linux-arm64/native
-          mkdir -p nuget/runtimes/linux-riscv64/native
           mkdir -p nuget/runtimes/linux-x64/native
-          mkdir -p nuget/runtimes/linux-x86/native
           mkdir -p nuget/data
 
-          cp -L linux-arm/src/libespeak-ng/libespeak-ng.so nuget/runtimes/linux-arm/native/libespeak-ng.so
-          cp -L linux-arm64/src/libespeak-ng/libespeak-ng.so nuget/runtimes/linux-arm64/native/libespeak-ng.so
-          cp -L linux-riscv64/src/libespeak-ng/libespeak-ng.so nuget/runtimes/linux-riscv64/native/libespeak-ng.so
-          cp -L linux-x64/src/libespeak-ng/libespeak-ng.so nuget/runtimes/linux-x64/native/libespeak-ng.so
-          cp -L linux-x86/src/libespeak-ng/libespeak-ng.so nuget/runtimes/linux-x86/native/libespeak-ng.so
+          cp -L espeak-ng/src/libespeak-ng/libespeak-ng.so nuget/runtimes/linux-x64/native/libespeak-ng.so
+          cp -L pcaudio/libpcaudio.so nuget/runtimes/linux-x64/native/libpcaudio.so
 
-          cp -r linux-x64/espeak-ng-data nuget/data/
+          cp -r espeak-ng/espeak-ng-data nuget/data/
 
           cp repo/COPYING nuget/LICENSE.txt
           cp repo/espeak-ng.nuspec nuget/espeak-ng.nuspec
