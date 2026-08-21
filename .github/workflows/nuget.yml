@@ -51,7 +51,7 @@ jobs:
         [ 'x${{ matrix.cross }}' = 'xyes' ] && export LD="${{ matrix.ccarch }}-${{ matrix.sys }}-ld"
         export CFLAGS="-g -Og -fno-omit-frame-pointer ${{ matrix.archcflags }}"
         export CXXFLAGS="-g -Og -fno-omit-frame-pointer ${{ matrix.archcflags }}"
-        cmake -Bbuild -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} -DUSE_ASYNC:BOOL=OFF
+        cmake -Bbuild -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }}
 
     # Build and test
     - name: make-binary
