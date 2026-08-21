@@ -57,11 +57,11 @@ jobs:
     - name: make-binary
       run: cmake --build build --target espeak-ng
     - name: make-data
-      run: ${{ matrix.runenv }} cmake --build build --target data
+      run: cmake --build build --target data
     - name: test
       run: |
-        ${{ matrix.runenv }} cmake --build build --target tests
-        ${{ matrix.runenv }} ctest --test-dir build -T test -j8 --output-on-failure
+        cmake --build build --target tests
+        ctest --test-dir build -T test -j8 --output-on-failure
 
     - name: upload-artifact
       uses: actions/upload-artifact@v7
@@ -84,15 +84,34 @@ jobs:
         ./configure --prefix=$(pwd)
         make
         make install
+
     - name: upload-artifact
       uses: actions/upload-artifact@v7
       with:
         name: pcaudio
         path: lib
 
+  build-sonic:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v7
+      with:
+        repository: jonko0493/sonic
+    
+    - name: build
+      run: make sonic all
+    
+    - name: upload-artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: sonic
+        path: ${{ github.workspace }}
+
   release:
     runs-on: ubuntu-latest
-    needs: [build-espeak, build-pcaudio]
+    needs: [build-espeak, build-pcaudio, build-sonic]
     steps:
       - name: checkout-repo
         uses: actions/checkout@v7
@@ -112,6 +131,12 @@ jobs:
           name: pcaudio
           path: pcaudio
       
+      - name: download-sonic
+        uses: actions/download-artifact@v8
+        with:
+          name: sonic
+          path: sonic
+      
       - name: create-nupkg
         run: |
           mkdir -p nuget/build
@@ -121,6 +146,7 @@ jobs:
 
           cp -L espeak-ng/src/libespeak-ng/libespeak-ng.so nuget/runtimes/linux-x64/native/libespeak-ng.so
           cp -L pcaudio/libpcaudio.so nuget/runtimes/linux-x64/native/libpcaudio.so
+          cp -L sonic/libsonic.so nuget/runtimes/linux-x64/native/libsonic.so
 
           cp -r espeak-ng/espeak-ng-data nuget/data/
 
