@@ -7,38 +7,13 @@ jobs:
   build-espeak:
     runs-on: ubuntu-latest
 
-    name: "Linux ${{ matrix.arch }}"
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [amd64]
-
-        include:
-          - os: ubuntu
-            osver: 22.04
-            sys: linux-gnu
-
-          - arch: amd64
-            ccarch: x86_64
-            nugetarch: x64
-            archcflags: ""
-            cross: no
-
     steps:
-
     # Linux - dependencies
-    - name: apt-build-deps
-      if: matrix.os == 'ubuntu' && matrix.arch != 'amd64'
-      run: |
-        [ 'x${{ matrix.cross }}' == 'xno' ] && sudo dpkg --add-architecture ${{ matrix.arch }}
-        sudo apt-get update
-        sudo apt-get install ronn kramdown python3
     - name: apt-arch-deps
       if: matrix.os == 'ubuntu' && matrix.cross == 'no'
-      run: "sudo apt-get install cmake valgrind g++-12-multilib linux-libc-dev:${{ matrix.arch }} libpcaudio-dev:${{ matrix.arch }} libsonic-dev:${{ matrix.arch }} libc6-dbg:${{ matrix.arch }} libgcc-s1:${{ matrix.arch }}"
+      run: "sudo apt-get install cmake valgrind g++-12-multilib linux-libc-dev:amd64 libpcaudio-dev:amd64 libsonic-dev:amd64 libc6-dbg:amd64 libgcc-s1:amd64"
     - name: apt-cross-deps
-      if: matrix.os == 'ubuntu' && matrix.cross == 'yes'
-      run: sudo apt-get install qemu-user g++-12-${{ matrix.arch }}-${{ matrix.sys }}
+      run: sudo apt-get install qemu-user g++-12-amd64-linux-gnu
 
     # Checkout code
     - uses: actions/checkout@v7
@@ -46,12 +21,11 @@ jobs:
     # Configure
     - name: configure
       run: |
-        export CC="${{ matrix.ccarch }}-${{ matrix.sys }}-gcc-12"
-        export CXX="${{ matrix.ccarch }}-${{ matrix.sys }}-g++-12"
-        [ 'x${{ matrix.cross }}' = 'xyes' ] && export LD="${{ matrix.ccarch }}-${{ matrix.sys }}-ld"
-        export CFLAGS="-g -Og -fno-omit-frame-pointer ${{ matrix.archcflags }}"
-        export CXXFLAGS="-g -Og -fno-omit-frame-pointer ${{ matrix.archcflags }}"
-        cmake -Bbuild -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} -DUSE_ASYNC:BOOL=OFF
+        export CC="x86_64-linux-gnu-gcc-12"
+        export CXX="x86_64-linux-gnu-g++-12"
+        export CFLAGS="-g -Og -fno-omit-frame-pointer"
+        export CXXFLAGS="-g -Og -fno-omit-frame-pointer"
+        cmake -Bbuild -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo -DBUILD_SHARED_LIBS:BOOL=ON -DCMAKE_SYSTEM_PROCESSOR=amd64 -DUSE_ASYNC:BOOL=OFF
 
     # Build and test
     - name: make-binary
